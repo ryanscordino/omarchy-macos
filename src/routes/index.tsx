@@ -8,7 +8,7 @@ import {
 	MessageCircle,
 	X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export const Route = createFileRoute("/")({ component: Home });
 
@@ -110,11 +110,46 @@ function ExternalLink({ label, href }: LinkItem) {
 
 function Home() {
 	const [menuOpen, setMenuOpen] = useState(false);
+	const menuToggleRef = useRef<HTMLButtonElement>(null);
+	const navRef = useRef<HTMLElement>(null);
 
 	const closeMenu = () => setMenuOpen(false);
+
+	useEffect(() => {
+		if (!menuOpen) return;
+
+		navRef.current?.querySelector<HTMLElement>("button, a")?.focus();
+		const previousOverflow = document.body.style.overflow;
+		document.body.style.overflow = "hidden";
+
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if (event.key !== "Escape") return;
+
+			event.preventDefault();
+			setMenuOpen(false);
+			requestAnimationFrame(() => menuToggleRef.current?.focus());
+		};
+
+		document.addEventListener("keydown", handleKeyDown);
+		return () => {
+			document.removeEventListener("keydown", handleKeyDown);
+			document.body.style.overflow = previousOverflow;
+		};
+	}, [menuOpen]);
+
 	const scrollToSection = (id: string) => {
+		const wasMenuOpen = menuOpen;
 		closeMenu();
-		document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+		if (wasMenuOpen) {
+			requestAnimationFrame(() => menuToggleRef.current?.focus());
+		}
+
+		const reduceMotion = window.matchMedia(
+			"(prefers-reduced-motion: reduce)",
+		).matches;
+		document.getElementById(id)?.scrollIntoView({
+			behavior: reduceMotion ? "auto" : "smooth",
+		});
 	};
 
 	return (
@@ -139,6 +174,8 @@ function Home() {
 					/>
 				</a>
 				<nav
+					id="primary-navigation"
+					ref={navRef}
 					className={menuOpen ? "site-nav is-open" : "site-nav"}
 					aria-label="Primary navigation"
 				>
@@ -171,13 +208,15 @@ function Home() {
 						rel="noreferrer"
 						onClick={closeMenu}
 					>
-						Download <Download size={13} />
+						Download ISO <Download size={13} />
 					</a>
 				</nav>
 				<button
 					className="menu-toggle"
+					ref={menuToggleRef}
 					type="button"
 					aria-expanded={menuOpen}
+					aria-controls="primary-navigation"
 					aria-label={menuOpen ? "Close navigation" : "Open navigation"}
 					onClick={() => setMenuOpen((open) => !open)}
 				>
@@ -187,7 +226,6 @@ function Home() {
 
 			<section className="archive-hero page-wrap" aria-labelledby="hero-title">
 				<div className="hero-copy">
-					<p className="archive-label">OMARCHY / A MALLEABLE OS</p>
 					<h1 id="hero-title">Beautiful, Fun &amp; Opinionated Linux</h1>
 					<p className="hero-byline">
 						By{" "}
@@ -233,13 +271,13 @@ function Home() {
 						<span>Omarchy</span>
 					</figcaption>
 				</figure>
+				<div className="section-marker">OMARCHY / A MALLEABLE OS</div>
 			</section>
 
 			<section
 				className="video-section page-wrap"
 				aria-labelledby="video-title"
 			>
-				<div className="section-label">01 / VIDEOS</div>
 				<div className="video-content">
 					<div className="video-intro">
 						<h2 id="video-title">Watch Omarchy.</h2>
@@ -256,7 +294,7 @@ function Home() {
 								key={video.title}
 							>
 								<span className="video-image">
-									<img src={video.image} alt={video.title} />
+									<img src={video.image} alt="" />
 									<span className="video-action">
 										{video.action} <ArrowUpRight size={14} />
 									</span>
@@ -266,6 +304,7 @@ function Home() {
 						))}
 					</div>
 				</div>
+				<div className="section-marker">01 / VIDEOS</div>
 			</section>
 
 			<section
@@ -273,7 +312,6 @@ function Home() {
 				id="manifesto"
 				aria-labelledby="manifesto-title"
 			>
-				<div className="section-label">02 / MANIFESTO</div>
 				<div className="manifesto-content">
 					<h2 id="manifesto-title">A different kind of desktop.</h2>
 					<p>
@@ -309,6 +347,7 @@ function Home() {
 						system.
 					</p>
 				</div>
+				<div className="section-marker">02 / MANIFESTO</div>
 			</section>
 
 			<section
@@ -316,7 +355,6 @@ function Home() {
 				id="links"
 				aria-labelledby="links-title"
 			>
-				<div className="section-label">03 / EXPLORE</div>
 				<div className="links-intro">
 					<h2 id="links-title">Start anywhere.</h2>
 					<p>Let&apos;s get started with the basics.</p>
@@ -341,10 +379,10 @@ function Home() {
 						))}
 					</div>
 				</div>
+				<div className="section-marker">03 / EXPLORE</div>
 			</section>
 
 			<section className="news-section page-wrap" aria-labelledby="news-title">
-				<div className="section-label">04 / NEWS</div>
 				<div className="news-feature">
 					<div>
 						<span className="news-date">August 21, 2026</span>
@@ -359,52 +397,49 @@ function Home() {
 						Read the news <ArrowRightIcon />
 					</a>
 				</div>
-			</section>
-
-			<section
-				className="closing-section page-wrap"
-				aria-labelledby="closing-title"
-			>
-				<div className="closing-copy">
-					<div className="section-label">05 / OMARCHY</div>
-					<h2 id="closing-title">
-						Beautiful, fun &amp; opinionated Linux by{" "}
-						<a href={links.dhh} target="_blank" rel="noreferrer">
-							DHH
-						</a>
-						.
-					</h2>
-					<p>
-						Looking to become a partner or patron of Omarchy? Write{" "}
-						<a href="mailto:david@omarchy.org">david@omarchy.org</a>
-					</p>
-				</div>
-				<div className="closing-meta">
-					<p>
-						Incubated at{" "}
-						<a href={links.threeSignals} target="_blank" rel="noreferrer">
-							37signals
-						</a>{" "}
-						(makers of{" "}
-						<a href={links.basecamp} target="_blank" rel="noreferrer">
-							Basecamp
-						</a>{" "}
-						and{" "}
-						<a href={links.hey} target="_blank" rel="noreferrer">
-							HEY
-						</a>
-						)
-					</p>
-					<p>
-						Sponsored hosting by{" "}
-						<a href={links.cloudflare} target="_blank" rel="noreferrer">
-							Cloudflare
-						</a>
-					</p>
-				</div>
+				<div className="section-marker">04 / NEWS</div>
 			</section>
 
 			<footer className="site-footer page-wrap">
+				<div className="footer-identity">
+					<div className="closing-copy">
+						<h2 id="closing-title">
+							Beautiful, fun &amp; opinionated Linux by{" "}
+							<a href={links.dhh} target="_blank" rel="noreferrer">
+								DHH
+							</a>
+							.
+						</h2>
+						<p>
+							Looking to become a partner or patron of Omarchy? Write{" "}
+							<a href="mailto:david@omarchy.org">david@omarchy.org</a>
+						</p>
+					</div>
+					<div className="closing-meta">
+						<p>
+							Incubated at{" "}
+							<a href={links.threeSignals} target="_blank" rel="noreferrer">
+								37signals
+							</a>{" "}
+							(makers of{" "}
+							<a href={links.basecamp} target="_blank" rel="noreferrer">
+								Basecamp
+							</a>{" "}
+							and{" "}
+							<a href={links.hey} target="_blank" rel="noreferrer">
+								HEY
+							</a>
+							)
+						</p>
+						<p>
+							Sponsored hosting by{" "}
+							<a href={links.cloudflare} target="_blank" rel="noreferrer">
+								Cloudflare
+							</a>
+						</p>
+					</div>
+				</div>
+				<div className="section-marker">05 / OMARCHY</div>
 				<div className="footer-topline">
 					<a className="wordmark footer-wordmark" href="#top">
 						<img
