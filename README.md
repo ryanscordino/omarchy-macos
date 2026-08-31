@@ -50,7 +50,21 @@ This project uses the Cloudflare Vite plugin (configured in `vite.config.ts`) an
 2. Authenticate: `wrangler login`
 3. Deploy: `npx wrangler deploy`
 
-For production env vars, run `wrangler secret put MY_VAR` for each secret listed in `.env.example`. Public (non-secret) vars go in `wrangler.jsonc` under `vars`.
+For production env vars, use `wrangler secret put MY_VAR`. Public (non-secret) vars go in `wrangler.jsonc` under `vars`.
+
+### GitHub Actions
+
+The repository contains two deployment workflows:
+
+- `.github/workflows/deploy.yml` deploys the production Worker after every push to `main` (including merges) and can also be started manually from GitHub Actions.
+- `.github/workflows/preview.yml` uploads a new Worker version for each opened, reopened, or updated pull request and comments the live Cloudflare preview URL on the pull request.
+
+Add these repository secrets under **Settings → Secrets and variables → Actions**:
+
+- `CLOUDFLARE_API_TOKEN`: a [Cloudflare API token](https://developers.cloudflare.com/fundamentals/api/get-started/create-token/) that can deploy Workers in the target account.
+- `CLOUDFLARE_ACCOUNT_ID`: the Cloudflare account ID that owns the Worker.
+
+Preview URLs use [Cloudflare’s versioned preview system](https://developers.cloudflare.com/workers/versions-and-deployments/preview-urls/) and the `pr-<number>` alias. Preview URLs are public when enabled in `wrangler.jsonc`. Pull requests from forks still run the checks, but their Cloudflare deployment steps are skipped because GitHub does not provide repository secrets to fork workflows.
 
 KV, D1, R2, and Durable Object bindings are configured in `wrangler.jsonc` — see https://developers.cloudflare.com/workers/wrangler/configuration/.
 
